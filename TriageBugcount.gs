@@ -13,25 +13,48 @@ function BugCount() {
   var index=0;
   var validSheetCnt=0;
   var persheetcnt=0;
+  var startSheet=0;
+  var endSheeet=0;
   var MONTHS= ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
   
- //var ss = SpreadsheetApp.getActiveSpreadsheet();  
+// var ss = SpreadsheetApp.getActiveSpreadsheet();  
   var ss = SpreadsheetApp.openByUrl( 
-  'https://docs.google.com/spreadsheets/d/1MELV9WjJlRkH7scjVsPP07LWgkzxAq5DNl7W5A8Ts5g/edit#gid=1258137971');
-  Logger.log("Sheet name %s", ss.getName());  
-  Logger.log("Sheet name %s",ss.getNumSheets()); 
+   //'https://docs.google.com/spreadsheets/d/1q0aKSFbD946stAFFXj6jpR0tJ3R4klmoTnkg3XIQ318/edit#gid=212464204');//Test_Experimental-Triage-Daily
+  'https://docs.google.com/spreadsheets/d/1F0zZ81U36splWTgvb8ipDgfWNeRLs8Qp1nuj-c5mqNQ/edit#gid=549692110');//Test
+  //'https://docs.google.com/spreadsheets/d/1MELV9WjJlRkH7scjVsPP07LWgkzxAq5DNl7W5A8Ts5g/edit#gid=1258137971');//Copy of Test
+  var numSheets=ss.getNumSheets();
+  var sheetName=ss.getName();
+  Logger.log("Work Sheet name %s",sheetName);  
+  Logger.log("Num Sheets %s",numSheets); 
   Logger.log("Given month %s",curMonth);
   Logger.log("Given year %s",curYear);
   
+  endSheeet=numSheets;
   var allsheets = ss.getSheets(); 
+   for (var k in allsheets){//for each sheet
+       var sheet =allsheets[k];
+       var name= sheet.getName();  
+       var fields = new Array();     
+       fields = name.split("-");
+       //Logger.log("Sheet name=%s, filed= %s",name,fields[1].toUpperCase().trim()); 
+       if((typeof fields[1] != "undefined")&&(MONTHS[curMonth]==fields[1].toUpperCase().trim())){
+       startSheet=Math.max(k-1,0.0);
+       endSheeet=Math.min(startSheet+6,numSheets);
+       
+       break;
+     }
+        
+   }
+   Logger.log("Sheet start= %s,sheet end= %s",startSheet,endSheeet);
   
-  for (var s in allsheets){//for each sheet
+  for (var s=startSheet;s<endSheeet;s++){//for max sheets 6
     var sheet=allsheets[s];
+    var name= sheet.getName();
+    Logger.log("Sheet name %s",name); 
     var skip=false;
     var firstrow = sheet.getRange(1,1,1,numCols);
     var singlerow= firstrow.getValues();
-    var singlerowdata=singlerow[0]
-    Logger.log(singlerowdata[1].toUpperCase().trim());
+    var singlerowdata=singlerow[0]    
     if((singlerowdata[1].toUpperCase().trim() != "NAME")&&(singlerowdata[2].toUpperCase().trim() != "BUG ID"))continue;//sheet validation 
     validSheetCnt++;
     persheetcnt=0;
@@ -45,14 +68,26 @@ function BugCount() {
       var dateString=row[DATE_COL];       
       var date = new Date(dateString); 
       var month=date.getMonth();
-      var year=date.getYear();       
+      var year=date.getYear();
+     // var max_month=12.0;  
+//      
+//        if(isDate(date)) {
+//          Logger.log("month=%s,parseFloat(month)=%s parseFloat(max_month)=%s",month,parseFloat(month),parseFloat(max_month));
+//        }else{
+//          if(isNaN(month) != true){
+//          Logger.log("not  proper date");
+//          }
+//        }
+                     
+//      if( isNaN(month) != true){
+//        Logger.log("month=%s,parseFloat(month)=%s parseFloat(max_month)=%s",month,parseFloat(month),parseFloat(max_month));
+//        if(parseFloat(month) >= parseFloat(max_month))Logger.log("ERR: Date improper at %s %s ",dateIndex,ss.getName());
+//      }
       
-      if(parseFloat(month)>11)Logger.log("ERR: Date improper at %s %s ",dateIndex,ss.getName());  
       if((dateString !="") && (( MONTHS[month] != MONTHS[curMonth]) || (parseFloat(year) != parseFloat(curYear))) )skip=true;           
       if((dateString !="") && ((MONTHS[month] == MONTHS[curMonth]) && (parseFloat(year) == parseFloat(curYear)))) skip=false;
       if(skip==true) continue; 
-      //Logger.log("Current year %s",curYear);
-      //Logger.log("Year from sheet %s",year);
+      
       var bugId=row[BUGID_COL];
       if(bugId =="")continue;
       var toCopy = true;         
@@ -85,7 +120,7 @@ function BugCount() {
       
   }
   
-  Logger.log("Valid sheet Count %s",validSheetCnt);
+  
   for(var index in nameList){    
     Logger.log("%s,%s",nameList[index],bugCountList[index]);
     }
@@ -95,4 +130,9 @@ function BugCount() {
     }                    
     Logger.log(sum);  
   
+}
+
+function isDate (x) 
+{ 
+  return (null != x) && !isNaN(x) && ("undefined" !== typeof x.getDate); 
 }
